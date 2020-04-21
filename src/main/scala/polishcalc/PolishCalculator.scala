@@ -22,6 +22,10 @@ object PolishCalculator {
   final val LParenthesesSign = '('
   final val RParenthesesSign = ')'
 
+  def formatString(s: String) = {
+    s.filterNot((x: Char) => x.isWhitespace)
+  }
+
   sealed trait Term //class trait, if i need constructor arguments
   case class ElementaryTerm(leftOperand: Int, rightOperand: Int, operation: BinaryOperation) extends Term()
   case class NonElementaryTerm(leftOperand: Term, rightOperand: Term, operation: BinaryOperation) extends Term()
@@ -54,33 +58,25 @@ object PolishCalculator {
     }
   }
 
-//  sealed trait Term
-//  final case class ElementaryTerm(l: Int, r: Int, operation: BinaryOperation) extends Term
-//  final case class NonElementaryTerm(l: Term, r: Term, operation: BinaryOperation) extends Term
-
-  def formatString(s: String) = {
-    s.filterNot((x: Char) => x.isWhitespace)
-  }
-
-  def evaluateOperation(): Unit ={
-
-  }
-
-  def evaluateTerm(term: Term) = {
+  def evaluateTerm(term: Term): Int = {//how to tailrec?? operate not evaluate
     term match {
       case ElementaryTerm(l,r,bop) => bop.operate(l,r)
-      case NonElementaryTerm(l,r,bop)  =>
+      case NonElementaryTerm(l,r,bop) => bop.operate(evaluateTerm(l), evaluateTerm(r))
     }
   }
 
 
   def getTermFromString() = {
 
-
   }
 
   def parseTerm(toParse: String, termAcc: Term) = {
 
+
+
+
+
+    @scala.annotation.tailrec
     def getLeftTerm(toParse: String, acc: String = "", openParenthesesNum: Int = 0): String = {
 //      val symbol = toParse.trim.reverse.head
       val symbol = toParse.head
@@ -103,13 +99,13 @@ object PolishCalculator {
       }
     }
 
-    val operation = toParse.trim.reverse.head
-    println("operation"+operation)
-    val term = operation match {
-      case SumSign => "fsdfdf"
-      case SubtractSign => "sdfsd"
-      case MultiplySign => "sdfsdfsdf"
-      case DevideSign => "ddd"
+    val operation = toParse.reverse.head
+
+    val startingTerm = toParse.head match {
+      case SumSign => throw new Exception("Sum symbol in incorrect position")
+      case SubtractSign => throw new Exception("Subtract symbol in incorrect position")
+      case MultiplySign => throw new Exception("Multiply symbol in incorrect position")
+      case DevideSign => throw new Exception("Devide symbol in incorrect position")
       case LParenthesesSign => getLeftTerm(toParse)
       case RParenthesesSign => throw new Exception("right parentheses is in unexpected place")
       case _ => if(operation.isDigit){"is digit"} else {"not digit"}
