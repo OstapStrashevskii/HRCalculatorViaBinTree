@@ -30,29 +30,29 @@ object PolishCalculator {
   case class ElementaryTerm(leftOperand: Int, rightOperand: Int, operation: BinaryOperation) extends Term()
   case class NonElementaryTerm(leftOperand: Term, rightOperand: Term, operation: BinaryOperation) extends Term()
 
-  sealed abstract class BinaryOperation(val sign: Char){
+  sealed abstract class BinaryOperation(val sign: Char, priority: Int){
     def operate(lOperand: Int, rOperand: Int): Int
   }
 
-  private final case class SumOperation() extends BinaryOperation(sign = SumSign){
+  private final case class SumOperation() extends BinaryOperation(sign = SumSign, priority = 1){
     override def operate(lOperand: Int, rOperand: Int): Int = {
       lOperand + rOperand
     }
   }
 
-  private final case class SubtractOperation() extends BinaryOperation(sign = SubtractSign){
+  private final case class SubtractOperation() extends BinaryOperation(sign = SubtractSign, priority = 1){
     override def operate(lOperand: Int, rOperand: Int): Int = {
       lOperand - rOperand
     }
   }
 
-  private final case class MultiplyOperation() extends BinaryOperation(sign = MultiplySign) {
+  private final case class MultiplyOperation() extends BinaryOperation(sign = MultiplySign, priority = 0) {
     override def operate(lOperand: Int, rOperand: Int): Int = {
       lOperand * rOperand
     }
   }
 
-  private final case class DevideOperation() extends BinaryOperation(sign = DevideSign) {
+  private final case class DevideOperation() extends BinaryOperation(sign = DevideSign,  priority = 0) {
     override def operate(lOperand: Int, rOperand: Int): Int = {
       lOperand / rOperand
     }
@@ -70,14 +70,44 @@ object PolishCalculator {
 
   }
 
-  def parseTerm(toParse: String, termAcc: Term) = {
 
 
 
+
+  def parseTerm(
+                 toParse: String,
+                 termsAcc: Seq[Term] = Seq.empty[Term],
+                 operationsAcc: Seq[BinaryOperation] = Seq.empty[BinaryOperation],
+                 numberAcc: String,
+                 parsingNum: Boolean = false,
+                 numberCache: Int,
+                 acc: Term): Term = {
+
+
+
+    toParse.head match {
+      case c if(c.isDigit) =>
+        val n = numberAcc.appended(c)
+        if(parsingNum == false){
+
+
+        }
+
+        parseTerm(toParse.tail, termsAcc, operationsAcc, n, acc)
+      case SumSign =>
+        parseTerm(toParse.tail, termsAcc, operationsAcc.appended(SumOperation), numberAcc, false, acc)
+      case SubtractSign => //DRY!!!
+        parseTerm(toParse.tail, termsAcc, operationsAcc.appended(SubtractOperation), numberAcc, false, acc)
+      case MultiplySign =>
+        parseTerm(toParse.tail, termsAcc, operationsAcc.appended(MultiplyOperation), numberAcc, false, acc)
+      case DevideSign =>
+        parseTerm(toParse.tail, termsAcc, operationsAcc.appended(DevideOperation), numberAcc, false, acc)
+      case LParenthesesSign => parseTerm(getTermStringInParentheses(toParse.tail))
+    }
 
 
     @scala.annotation.tailrec
-    def getLeftTerm(toParse: String, acc: String = "", openParenthesesNum: Int = 0): String = {
+    def getTermStringInParentheses(toParse: String, acc: String = "", openParenthesesNum: Int = 0): String = {
 //      val symbol = toParse.trim.reverse.head
       val symbol = toParse.head
       println("term="+symbol)
@@ -85,17 +115,17 @@ object PolishCalculator {
       symbol match {
         case LParenthesesSign =>
           println("toParse.tail="+toParse.tail)
-          getLeftTerm(toParse.tail, acc.appended(symbol), openParenthesesNum+1)
+          getTermStringInParentheses(toParse.tail, acc.appended(symbol), openParenthesesNum+1)
         case RParenthesesSign =>
           if(openParenthesesNum - 1 == 0){
             ((10 - 5) - ((5 +5) * (4 + 4))) * 8
             acc.appended(RParenthesesSign)
           } else {
-            getLeftTerm(toParse.tail, acc.appended(symbol), openParenthesesNum - 1)
+            getTermStringInParentheses(toParse.tail, acc.appended(symbol), openParenthesesNum - 1)
           }
         case _ =>
           println("toParse.tail="+toParse.tail)
-          getLeftTerm(toParse.tail, acc.appended(symbol), openParenthesesNum)
+          getTermStringInParentheses(toParse.tail, acc.appended(symbol), openParenthesesNum)
       }
     }
 
@@ -106,15 +136,15 @@ object PolishCalculator {
       case SubtractSign => throw new Exception("Subtract symbol in incorrect position")
       case MultiplySign => throw new Exception("Multiply symbol in incorrect position")
       case DevideSign => throw new Exception("Devide symbol in incorrect position")
-      case LParenthesesSign => getLeftTerm(toParse)
+      case LParenthesesSign => getTermStringInParentheses(toParse)
       case RParenthesesSign => throw new Exception("right parentheses is in unexpected place")
       case _ => if(operation.isDigit){"is digit"} else {"not digit"}
     }
 
-    def getFirstTermFromLeft(s: String) = {
-      println("getFirstTermFromLeft")
-      (getLeftTerm(s).tail).reverse.tail
-    }
+//    def getFirstTermFromLeft(s: String) = {
+//      println("getFirstTermFromLeft")
+//      (getTermInParentheses(s).tail).reverse.tail
+//    }
 
     getFirstTermFromLeft(formatString(toParse))
   }
@@ -140,6 +170,10 @@ object PolishCalculator {
 //  10 5 - 5 5 + 4 4 + * - 8 *
 //  ((10 - 5) - (5 + 5) * (4 + 4)) * 8
 //  4 * 4 * 4
+
+
+
+
 
 
   def main(args: Array[String]) {
